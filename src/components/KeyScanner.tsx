@@ -25,25 +25,43 @@ const KeyScanner: React.FC = () => {
   ];
 
   const analyzeKey = async (imageData: string): Promise<KeyMatch> => {
-    // Simulate AI analysis
+    console.log('Starting key analysis...');
+    
+    // Simulate AI analysis with more realistic logic
     await new Promise(resolve => setTimeout(resolve, 2000));
     
-    // Mock analysis - in real app, this would use computer vision
-    const hasNumber5 = Math.random() > 0.3; // Simulate detection
-    const isSilver = Math.random() > 0.4;
+    // Check if we have actual image data
+    if (!imageData || imageData.length < 100) {
+      console.log('No valid image data for analysis');
+      return {
+        id: 'unknown',
+        name: 'No Image Detected',
+        confidence: 0,
+        isCorrect: false
+      };
+    }
     
-    if (hasNumber5 && isSilver) {
+    // Mock analysis based on image characteristics
+    // In real app, this would use computer vision/ML
+    const randomFactor = Math.random();
+    console.log('Analysis random factor:', randomFactor);
+    
+    if (randomFactor > 0.4) {
+      // Simulate detecting the correct key (silver key with #5)
+      console.log('Detected: Master Key #5');
       return {
         id: '1',
         name: 'Master Key #5',
-        confidence: 92,
+        confidence: Math.floor(85 + Math.random() * 10), // 85-95%
         isCorrect: true
       };
     } else {
+      // Simulate detecting different key
+      console.log('Detected: Different key');
       return {
         id: '2',
-        name: 'Unknown Key',
-        confidence: 67,
+        name: 'Access Key #3',
+        confidence: Math.floor(60 + Math.random() * 20), // 60-80%
         isCorrect: false
       };
     }
@@ -52,13 +70,20 @@ const KeyScanner: React.FC = () => {
   const capturePhoto = async () => {
     try {
       setIsScanning(true);
+      setScanResult(null); // Clear previous results
+      
+      console.log('Attempting to capture photo...');
       
       const image = await Camera.getPhoto({
         quality: 90,
         allowEditing: true,
         resultType: CameraResultType.DataUrl,
         source: CameraSource.Camera,
+        width: 800,
+        height: 800
       });
+
+      console.log('Photo captured successfully:', !!image.dataUrl);
 
       if (image.dataUrl) {
         setCapturedImage(image.dataUrl);
@@ -68,14 +93,24 @@ const KeyScanner: React.FC = () => {
         setScanResult(result);
         
         if (result.isCorrect) {
-          toast.success(`Correct key identified: ${result.name}`);
+          toast.success(`✓ Correct key identified: ${result.name}`);
         } else {
-          toast.error('Key not recognized or incorrect');
+          toast.error(`✗ ${result.name} - Not the target key`);
         }
+      } else {
+        throw new Error('No image data received');
       }
     } catch (error) {
-      console.error('Error taking photo:', error);
-      toast.error('Failed to capture photo');
+      console.error('Camera capture error:', error);
+      
+      // Show user-friendly error and suggest file upload
+      toast.error('Camera unavailable - try uploading an image instead');
+      
+      // Auto-trigger file input as fallback
+      const fileInput = document.getElementById('file-upload') as HTMLInputElement;
+      if (fileInput) {
+        fileInput.click();
+      }
     } finally {
       setIsScanning(false);
     }
@@ -83,13 +118,25 @@ const KeyScanner: React.FC = () => {
 
   const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
     const file = event.target.files?.[0];
-    if (file) {
+    if (!file) return;
+    
+    console.log('File uploaded:', file.name, file.type);
+    
+    if (!file.type.startsWith('image/')) {
+      toast.error('Please select an image file');
+      return;
+    }
+    
+    try {
+      setIsScanning(true);
+      setScanResult(null); // Clear previous results
+      
       const reader = new FileReader();
       reader.onload = async (e) => {
         const imageData = e.target?.result as string;
-        setCapturedImage(imageData);
-        setIsScanning(true);
+        console.log('Image data loaded, length:', imageData?.length);
         
+        setCapturedImage(imageData);
         toast.success('Image uploaded! Analyzing...');
         
         const result = await analyzeKey(imageData);
@@ -97,13 +144,26 @@ const KeyScanner: React.FC = () => {
         setIsScanning(false);
         
         if (result.isCorrect) {
-          toast.success(`Correct key identified: ${result.name}`);
+          toast.success(`✓ Correct key identified: ${result.name}`);
         } else {
-          toast.error('Key not recognized or incorrect');
+          toast.error(`✗ ${result.name} - Not the target key`);
         }
       };
+      
+      reader.onerror = () => {
+        toast.error('Failed to read image file');
+        setIsScanning(false);
+      };
+      
       reader.readAsDataURL(file);
+    } catch (error) {
+      console.error('File upload error:', error);
+      toast.error('Failed to process image');
+      setIsScanning(false);
     }
+    
+    // Clear the input
+    event.target.value = '';
   };
 
   const resetScanner = () => {
