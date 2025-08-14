@@ -278,24 +278,40 @@ const KeyScanner: React.FC = () => {
               />
               <Button variant="outline" className="w-full" size="lg">
                 <Upload className="w-5 h-5 mr-2" />
-                Upload Image
+                Add New Image
               </Button>
             </div>
           </>
         ) : (
-          <div className="grid grid-cols-2 gap-3">
+          <div className="grid grid-cols-3 gap-2">
             <Button 
               onClick={capturePhoto} 
               disabled={isScanning}
               variant="outline"
+              size="sm"
             >
-              <Scan className="w-4 h-4 mr-2" />
+              <Scan className="w-4 h-4 mr-1" />
               Scan Again
             </Button>
+            
+            <div className="relative">
+              <input
+                type="file"
+                accept="image/*"
+                onChange={handleFileUpload}
+                className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
+                id="file-upload-new"
+              />
+              <Button variant="outline" size="sm" className="w-full">
+                <Upload className="w-4 h-4 mr-1" />
+                Add New
+              </Button>
+            </div>
             
             <Button 
               onClick={resetScanner}
               variant="outline"
+              size="sm"
             >
               Reset
             </Button>
